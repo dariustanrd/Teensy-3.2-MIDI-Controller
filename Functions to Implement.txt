@@ -1,0 +1,29 @@
+LAYER 1 (Default)
+
+ENCODERS (8 + 8PB)
+1) Exposure
+2) Highlights
+3) Shadows
+4) Contrast
+5) Whites
+6) Blacks
+7) 
+8) 
+
+Temp
+Clarity
+Sharpening
+Dehaze
+
+TRIMPOT (1)
+-
+
+MECH SWITCHES (21PB)
+-Delete, delete from disk, enter
+-Move Left Image
+-Move Right Image
+-Before After Toggle
+
+MOMENTARY TOGGLE SWITCHES (2 Directions)
+- Layer Up, Change LED colour
+- Layer Down, Change LED colour
