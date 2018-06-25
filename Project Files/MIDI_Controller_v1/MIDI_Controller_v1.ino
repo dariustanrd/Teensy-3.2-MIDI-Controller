@@ -88,6 +88,7 @@ void SetupPin() {
 void SetupCC(){
   for (int i = 0; i < num_enc; i++) {
     enc_CC[i] = i;
+    enc_CCVal[i] = 64; //set CCVal to be middle upon init.
   }
   for (int i = 0; i < num_keys; i++) {
     key_CC[i] = i + num_enc;
