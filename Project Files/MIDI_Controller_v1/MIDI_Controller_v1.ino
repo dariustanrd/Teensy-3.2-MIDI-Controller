@@ -1,15 +1,9 @@
 #include <Encoder.h>
+#include <Keypad.h>
 
-#define MATCOL1 24
-#define MATCOL2 25
-#define MATCOL3 26
-#define MATCOL4 27
-#define MATCOL5 28
-#define MATCOL6 29
 #define SW_UP 30
 #define SW_DWN 31
 #define LED1 32
-#define MATCOL7 33
 
 #define RESET 0
 
@@ -29,6 +23,22 @@ byte key_CCVal[num_keys];
 volatile int layer = 1;
 volatile int sensitivity_val = 0;
 bool SENS_KEY = true;
+
+const byte ROWS = 4;
+const byte COLS = 7;
+byte rowPins[ROWS] = {18,19,20,21};
+byte colPins[COLS] = {24,25,26,27,28,29,33};
+
+char keymap[ROWS][COLS] = {
+  {"A0","A1","A2","A3","A4","A5","A6"},
+  {"B0","B1","B2","B3","B4","B5","B6"},
+  {"C0","C1","C2","C3","C4","C5","C6"},
+  {"D0","D1","D2","D3","D4","D5","D6"},
+};
+
+Keypad keypad( 
+  makeKeymap(keymap), rowPins, colPins, sizeof(rowPins), sizeof(colPins)
+);
 
 Encoder enc1(0, 1);
 Encoder enc2(2, 3);
