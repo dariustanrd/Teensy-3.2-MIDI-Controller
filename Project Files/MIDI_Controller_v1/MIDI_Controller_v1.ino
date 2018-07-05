@@ -231,7 +231,7 @@ void lightroom() {
   read_enc();
   send_enc_CC();
 }
-
+ 
 void keypad_routine() {
   //if row and col at the same time, then that button pressed
   //do i need to set either row or col to be ON as output, then other to detect if high or low as input?
