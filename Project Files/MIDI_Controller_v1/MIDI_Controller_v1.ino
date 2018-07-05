@@ -30,11 +30,13 @@ byte rowPins[ROWS] = {18,19,20,21};
 byte colPins[COLS] = {24,25,26,27,28,29,33};
 
 char keymap[ROWS][COLS] = {
-  {"A0","A1","A2","A3","A4","A5","A6"},
-  {"B0","B1","B2","B3","B4","B5","B6"},
-  {"C0","C1","C2","C3","C4","C5","C6"},
-  {"D0","D1","D2","D3","D4","D5","D6"},
+  {'a','b','c','d','e','f','g'},
+  {'h','i','j','k','l','m','n'},
+  {'o','p','q','r','s','t','u'},
+  {'v','w','x','y','z','0','1'}
 };
+
+char key;
 
 Keypad keypad( 
   makeKeymap(keymap), rowPins, colPins, sizeof(rowPins), sizeof(colPins)
@@ -46,8 +48,8 @@ Encoder enc3(4, 5);
 Encoder enc4(6, 7);
 Encoder enc5(8, 9);
 Encoder enc6(10, 11);
-Encoder enc7(14, 15);
-Encoder enc8(16, 17);
+Encoder enc7(17, 16);
+Encoder enc8(15, 14);
 
 //Main Functions*******************************************************************************************************************//
 void setup() {
@@ -55,6 +57,7 @@ void setup() {
   SetupPin();
   SetupCC();
   reset_enc();
+  SetupKeypad();
 }
 
 void loop() {
@@ -103,6 +106,11 @@ void SetupCC(){
   for (int i = 0; i < num_keys; i++) {
     key_CC[i] = i + num_enc;
   }
+}
+void SetupKeypad() {
+  keypad.begin( makeKeymap(keymap) );
+  keypad.addEventListener(keypadEvent_handler);  // Add an event listener.
+  keypad.setHoldTime(1000);                   // Time delay between PRESSED and HOLD event trigger
 }
 void layerSelect() {
   //check if SW_up press, layer++. if SW_dwn press, layer--
@@ -228,6 +236,8 @@ void check_sens(){
 void macropad() {
   read_enc();
   send_enc_CC();
+  read_keys();
+  
   //keypad_routine(/*input the values to change here?*/);
   //change LED
   //change enc CC value?
@@ -240,10 +250,54 @@ void macropad() {
 void lightroom() {
   read_enc();
   send_enc_CC();
+  read_keys();
 }
 
-void keypad_routine() {
-  //if row and col at the same time, then that button pressed
-  //do i need to set either row or col to be ON as output, then other to detect if high or low as input?
-  //this function will be polled
+void read_keys() {
+  key = keypad.getKey();
+  // switch (layer) {
+  //   case 1:
+  //     //code for layer 1
+  //   break;
+
+  //   case 2:
+  //     //code for layer 2
+  //   break;
+  // }
+  // use this for the switching of layers?
+
+  if (key) {
+    Serial.print("Key = ");
+    Serial.print(key);
+    Serial.println();
+    
+    // if (key == "A0") {
+
+    // }
+  }
+}
+
+static byte kpadState;
+void keypadEvent_handler(KeypadEvent key) {
+  kpadState = keypad.getState();
+  check_keys(key);
+}
+
+void check_keys (char key) {
+  switch(kpadState) {
+    case PRESSED: //here can use PRESSED cos the state is enum 
+      //code
+      Serial.print("Key = ");
+      Serial.print(key);
+      Serial.println();
+    break;
+
+    case HOLD:
+      //code
+    break;
+
+    case RELEASED:
+      //code
+    break;
+  }
 }
