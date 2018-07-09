@@ -1,4 +1,5 @@
 #include <Encoder.h>
+#include <WS2812Serial.h>
 
 #define SW_UP 32
 #define SW_DWN 30
@@ -7,13 +8,22 @@
 #define TRIMPOT 22
 
 #define RESET 0
+#define NUM_ENC 8
+#define NUM_LEDS 8
+#define MAX_LAYER 5
+
+#define RED    0xFF0000
+#define GREEN  0x00FF00
+#define BLUE   0x0000FF
+#define YELLOW 0xFFFF00
+#define PINK   0xFF1088
+#define ORANGE 0xE05800
+#define WHITE  0xFFFFFF
 
 //Declarations for Encoder Functionality*******************************************************************************************************************//
-const int num_enc = 8;
-
-long enc_pos_new[num_enc]; //used to be -999
-long enc_pos_old[num_enc]; //used to be -999
-int enc_updateCCflag[num_enc];
+long enc_pos_new[NUM_ENC]; //used to be -999
+long enc_pos_old[NUM_ENC]; //used to be -999
+int enc_updateCCflag[NUM_ENC];
 
 Encoder enc1(0, 1);
 Encoder enc2(2, 3);
@@ -25,13 +35,9 @@ Encoder enc7(15, 14);
 Encoder enc8(17, 16);
 
 //Declarations for MIDI Functionality*******************************************************************************************************************//
-const int num_keys = 29;
-
 byte midiChannel = 0;
-byte enc_CC[num_enc];
-byte enc_CCVal[num_enc];
-byte key_CC[num_keys];
-byte key_CCVal[num_keys];
+byte enc_CC[NUM_ENC];
+byte enc_CCVal[NUM_ENC];
 
 volatile int sensitivity_val = 0;
 bool SENS_KEY = true;
@@ -80,6 +86,11 @@ int curTrim = 0;
 int prevTrim = 0;
 int smoothVal = 0;
 
+byte drawingMemory[NUM_LEDS*3];         //  3 bytes per LED
+DMAMEM byte displayMemory[NUM_LEDS*12]; // 12 bytes per LED
+
+WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, LED1, WS2812_GRB);
+
 //Main Functions*******************************************************************************************************************//
 void setup() {
   Serial.begin(9600);
@@ -87,6 +98,8 @@ void setup() {
   SetupCC();
   SetupKeys();
   reset_enc();
+
+  leds.begin();
 }
 
 void loop() {
@@ -96,20 +109,28 @@ void loop() {
       case 1:
         macropad();
         //Serial.print("Macropad Mode\n");
+        setColour(BLUE);
       break;
       
       case 2:
         lightroom();
+        setColour(PINK);
       break;
 
       case 3:
         //Premiere Pro Edit Layer?
+        setColour(GREEN);
       break;
 
       case 4:
-        //Coding Layer? Autohotkey Layer?
+        //Coding Layer? 
+        setColour(YELLOW);
       break;
 
+      case 5:
+        //end layer
+        rainbowCycle(5);
+      break;
       default:
         macropad();
     }
@@ -122,12 +143,9 @@ void SetupPin() {
   pinMode(ENC1PB, INPUT_PULLUP);
 }
 void SetupCC(){
-  for (int i = 0; i < num_enc; i++) {
+  for (int i = 0; i < NUM_ENC; i++) {
     enc_CC[i] = i;
     enc_CCVal[i] = 64; //set CCVal to be middle upon init.
-  }
-  for (int i = 0; i < num_keys; i++) {
-    key_CC[i] = i + num_enc;
   }
 }
 void SetupKeys(){
@@ -157,7 +175,7 @@ void layerSelect() {
   curDWN = digitalRead(SW_DWN);
 
   if (curUP == LOW && prevUP == HIGH) {
-    if (layer != 10) {
+    if (layer != MAX_LAYER) {
       layer++;
     } else {
       layer = 1;
@@ -170,7 +188,7 @@ void layerSelect() {
     if (layer != 1) {
       layer--;
     } else {
-      layer = 10;
+      layer = MAX_LAYER;
     }
     Serial.println(layer);
   }
@@ -181,7 +199,7 @@ void layerSelect() {
 //Volume (TRIMPOT) Function*******************************************************************************************************************//
 void volumeSelect() {
   int trimVal = analogRead(TRIMPOT);
-  float smoothing = 0.3;
+  float smoothing = 0.2;
   
   smoothVal = (smoothing*trimVal) + ((1-smoothing)*smoothVal);
   
@@ -210,6 +228,48 @@ void volumeSelect() {
   }
 }
 
+//LED Functions*******************************************************************************************************************//
+void setColour (int colour) {
+  for (int i=0; i < leds.numPixels(); i++) {
+    leds.setPixel(i, colour);
+    leds.show();
+  }
+}
+
+void rainbowCycle(int SpeedDelay) {
+  byte *c;
+  uint16_t i, j;
+
+  for(j=0; j<256*5; j++) { // 5 cycles of all colors on wheel
+    for(i=0; i< NUM_LEDS; i++) {
+      c=Wheel(((i * 256 / NUM_LEDS) + j) & 255);
+      leds.setPixel(i, *c, *(c+1), *(c+2));
+    }
+    leds.show();
+    delay(SpeedDelay);
+  }
+}
+
+byte * Wheel(byte WheelPos) {
+  static byte c[3];
+  
+  if(WheelPos < 85) {
+   c[0]=WheelPos * 3;
+   c[1]=255 - WheelPos * 3;
+   c[2]=0;
+  } else if(WheelPos < 170) {
+   WheelPos -= 85;
+   c[0]=255 - WheelPos * 3;
+   c[1]=0;
+   c[2]=WheelPos * 3;
+  } else {
+   WheelPos -= 170;
+   c[0]=0;
+   c[1]=WheelPos * 3;
+   c[2]=255 - WheelPos * 3;
+  }
+  return c;
+}
 //Encoder Functions*******************************************************************************************************************//
 void reset_enc(){
   enc1.write(RESET);
@@ -234,7 +294,7 @@ void read_enc() {
   enc_pos_new[7] = enc8.read();
 
   //check if old and new positions of each encoder need to change CC val
-  for (int i = 0; i < num_enc; i++) {
+  for (int i = 0; i < NUM_ENC; i++) {
     enc_updateCCflag[i] = check_pos(enc_pos_new[i], enc_pos_old[i]);
     enc_pos_old[i] = enc_pos_new[i];
     enc_CCVal[i] = update_CCVal(enc_updateCCflag[i], enc_CCVal[i]);
@@ -294,7 +354,7 @@ byte update_CCVal(long flag, byte CCVal) {
 
 void send_enc_CC() {
   //send CC values for all enc if they have an update
-  for (int i = 0; i < num_enc; i++) {
+  for (int i = 0; i < NUM_ENC; i++) {
     if (enc_updateCCflag[i]!=0) {
       usbMIDI.sendControlChange(enc_CC[i], enc_CCVal[i], midiChannel);
       Serial.print("CC Change = ");
@@ -603,6 +663,32 @@ void keyPress_func(int key) {
   } else if (layer == 2) { //for lightroom layer
     usbMIDI.sendNoteOn(key, 99, midiChannel);
     usbMIDI.sendNoteOff(key, 0, midiChannel);
+    switch (key) { //to reset enc values for MIDI2LR
+      case 30:
+        enc_CCVal[7] = 64;
+      break;
+      case 31:
+        enc_CCVal[6] = 64;
+      break;
+      case 32:
+        enc_CCVal[5] = 64;
+      break;
+      case 33:
+        enc_CCVal[4] = 64;
+      break;
+      case 34:
+        enc_CCVal[3] = 64;
+      break;
+      case 35:
+        enc_CCVal[2] = 64;
+      break;
+      case 36:
+        enc_CCVal[1] = 64;
+      break;
+      case 99: //encPB case
+        enc_CCVal[0] = 64;
+      break;
+    }
   }
 }
 
