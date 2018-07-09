@@ -90,12 +90,9 @@ void setup() {
 }
 
 void loop() {
-  delay(50); //to see the serial
   layerSelect();
   volumeSelect();
   switch(layer) {
-    //switching cases should change function of enc and keypad
-    //and function just changes the values for the enc & keypad routines
       case 1:
         macropad();
         //Serial.print("Macropad Mode\n");
@@ -106,19 +103,16 @@ void loop() {
       break;
 
       case 3:
-        //Premiere Pro Edit Layer
+        //Premiere Pro Edit Layer?
       break;
 
       case 4:
-        //Coding Layer
+        //Coding Layer? Autohotkey Layer?
       break;
 
       default:
         macropad();
     }
-
-  //send all the CC values here? or if not in indiv functions 
-  //--> send in indiv functions cos diff case will have diff cc val attached
 }
 
 //Setup Functions*******************************************************************************************************************//
@@ -126,7 +120,6 @@ void SetupPin() {
   pinMode(SW_UP, INPUT_PULLUP);
   pinMode(SW_DWN, INPUT_PULLUP); 
   pinMode(ENC1PB, INPUT_PULLUP);
-  //digitalWrite(REDLED, LOW);
 }
 void SetupCC(){
   for (int i = 0; i < num_enc; i++) {
@@ -204,17 +197,11 @@ void volumeSelect() {
     else {
       if (curTrim > prevTrim) {
         // Serial.println("Increasing");
-        // if (curTrim % 20 == 0){
-        //   Serial.println("Press Vol UP");
-        // }
         Keyboard.press(KEY_MEDIA_VOLUME_INC);
         Keyboard.release(KEY_MEDIA_VOLUME_INC);
       } 
       else if (curTrim < prevTrim) {
         // Serial.println("Decreasing");
-        // if (curTrim % 20 == 0){
-        //   Serial.println("Press Vol DWN");
-        // }
         Keyboard.press(KEY_MEDIA_VOLUME_DEC);
         Keyboard.release(KEY_MEDIA_VOLUME_DEC);
       }
@@ -226,7 +213,7 @@ void volumeSelect() {
 //Encoder Functions*******************************************************************************************************************//
 void reset_enc(){
   enc1.write(RESET);
-  enc2.write(RESET); //enc1.write(newPosition); //Use this for reset enc Set the accumulated position to a new number.
+  enc2.write(RESET);
   enc3.write(RESET);
   enc4.write(RESET);
   enc5.write(RESET);
@@ -336,7 +323,7 @@ void read_keys() {
       button_encPB = 1;
       prev_encPB = cur_encPB;
     }
-    state_encPBMachine();
+    encPB_stateMachine();
 
     // iterate the rows
     for (int rowIndex=0; rowIndex < rowCount; rowIndex++) {
@@ -372,7 +359,7 @@ void read_keys() {
         pinMode(curRow, INPUT);
     }
 }
-void state_encPBMachine() {
+void encPB_stateMachine() {
   stateChanged_encPB = false;
   switch (state_encPB) {
     case IDLE:
@@ -403,6 +390,7 @@ void state_encPBMachine() {
     break;
   }
 }
+
 void kstateMachine(int row, int col){
   stateChanged[row][col] = false;
   switch (kstate[row][col]) {
@@ -494,11 +482,12 @@ void send_keys() {
   }
   //for multi of 4 corner keys
   if ((stateChanged[0][0] || stateChanged[0][6] || stateChanged[2][0] || stateChanged[2][6]) == true) {
-    //will only occur after HOLD state entered, due to time delay
     if (((kstate[0][0] && kstate[0][6] && kstate[2][0] && kstate[2][6]) == PRESSED) 
     && (multiPress == false)) {
       Serial.println("multi PRESS");
-      //is there any way to reset the serial? mimic a power cycle
+      //is there any way to reset the serial? mimic a power cycle?
+      // Keyboard.press(KEY_SYSTEM_SLEEP);
+      // Keyboard.release(KEY_SYSTEM_SLEEP);
       multiPress = true;
     }
     if (((kstate[0][0] == RELEASED) || (kstate[0][6] == RELEASED) ||
