@@ -1,9 +1,10 @@
 #include <Encoder.h>
 
-#define SW_UP 30
-#define SW_DWN 31
-#define LED1 32
+#define SW_UP 32
+#define SW_DWN 30
+#define LED1 31
 #define ENC1PB 12
+#define TRIMPOT 22
 
 #define RESET 0
 
@@ -42,6 +43,12 @@ const int rowCount = sizeof(rows)/sizeof(rows[0]);
 byte cols[] = {33,29,28,27,26,25,24};
 const int colCount = sizeof(cols)/sizeof(cols[0]);
 
+byte cur_encPB;
+byte prev_encPB;
+bool button_encPB;
+bool stateChanged_encPB;
+unsigned long encPB_holdTimer = 0;
+
 byte curKeys[rowCount][colCount] = {};
 byte prevKeys[rowCount][colCount] = {};
 bool button[rowCount][colCount] = {};
@@ -54,6 +61,7 @@ unsigned long holdTimer = 0;
 unsigned long holdTime = 1000; //hard code 1s
 
 KeyState kstate[rowCount][colCount] = {};
+KeyState state_encPB;
 
 const int keymap[rowCount][colCount] = {
   {00,01,02,03,04,05,06},
@@ -64,6 +72,13 @@ const int keymap[rowCount][colCount] = {
 
 //Other Declarations*******************************************************************************************************************//
 volatile int layer = 1;
+bool curDWN = HIGH;
+bool prevDWN = HIGH;
+bool curUP = HIGH;
+bool prevUP = HIGH;
+int curTrim = 0;
+int prevTrim = 0;
+int smoothVal = 0;
 
 //Main Functions*******************************************************************************************************************//
 void setup() {
@@ -77,7 +92,7 @@ void setup() {
 void loop() {
   delay(50); //to see the serial
   layerSelect();
-  
+  volumeSelect();
   switch(layer) {
     //switching cases should change function of enc and keypad
     //and function just changes the values for the enc & keypad routines
@@ -108,8 +123,9 @@ void loop() {
 
 //Setup Functions*******************************************************************************************************************//
 void SetupPin() {
-  pinMode(SW_UP, INPUT);
-  pinMode(SW_DWN, INPUT); //should they be INPUT_PULLUP?
+  pinMode(SW_UP, INPUT_PULLUP);
+  pinMode(SW_DWN, INPUT_PULLUP); 
+  pinMode(ENC1PB, INPUT_PULLUP);
   //digitalWrite(REDLED, LOW);
 }
 void SetupCC(){
@@ -139,28 +155,74 @@ void SetupKeys(){
             kstate[rowIndex][colIndex] = IDLE;
         }
     }
+    state_encPB = IDLE;
 }
 //Layer Function*******************************************************************************************************************//
 void layerSelect() {
   //check if SW_up press, layer++. if SW_dwn press, layer--
-  if (SW_UP) {
+  curUP = digitalRead(SW_UP);
+  curDWN = digitalRead(SW_DWN);
+
+  if (curUP == LOW && prevUP == HIGH) {
     if (layer != 10) {
       layer++;
     } else {
       layer = 1;
     }
-    //Serial.print("Layer Up\n");
-  }
-  if (SW_DWN) {
+    Serial.println(layer);
+  } 
+  prevUP = curUP;
+  
+  if (curDWN == LOW && prevDWN == HIGH) {
     if (layer != 1) {
       layer--;
     } else {
       layer = 10;
     }
-    //Serial.print("Layer Down\n");
+    Serial.println(layer);
   }
+  prevDWN = curDWN;
+
   midiChannel = layer;
 }
+//Volume (TRIMPOT) Function*******************************************************************************************************************//
+void volumeSelect() {
+  int trimVal = analogRead(TRIMPOT);
+  float smoothing = 0.3;
+  
+  smoothVal = (smoothing*trimVal) + ((1-smoothing)*smoothVal);
+  
+  curTrim = map(smoothVal, 0, 1023, 0, 100);
+  
+  if (curTrim != prevTrim) {
+    Serial.println(curTrim);
+    if (curTrim <= 5 ) {
+    // Serial.println("Mute");
+      Keyboard.press(KEY_MEDIA_MUTE);
+      Keyboard.release(KEY_MEDIA_MUTE);
+    } 
+    else {
+      if (curTrim > prevTrim) {
+        // Serial.println("Increasing");
+        // if (curTrim % 20 == 0){
+        //   Serial.println("Press Vol UP");
+        // }
+        Keyboard.press(KEY_MEDIA_VOLUME_INC);
+        Keyboard.release(KEY_MEDIA_VOLUME_INC);
+      } 
+      else if (curTrim < prevTrim) {
+        // Serial.println("Decreasing");
+        // if (curTrim % 20 == 0){
+        //   Serial.println("Press Vol DWN");
+        // }
+        Keyboard.press(KEY_MEDIA_VOLUME_DEC);
+        Keyboard.release(KEY_MEDIA_VOLUME_DEC);
+      }
+    }
+    prevTrim = curTrim;
+  }
+}
+
 //Encoder Functions*******************************************************************************************************************//
 void reset_enc(){
   enc1.write(RESET);
@@ -264,6 +326,18 @@ void check_sens(){
 }
 //Keypad Functions*******************************************************************************************************************//
 void read_keys() {
+    //read single encPB ENC1PB not on matrix
+    cur_encPB = digitalRead(ENC1PB);
+    if (cur_encPB == 0 && prev_encPB == 1) {
+      button_encPB = 0;
+      prev_encPB = cur_encPB;
+    }
+    if (cur_encPB == 1 && prev_encPB == 0) {
+      button_encPB = 1;
+      prev_encPB = cur_encPB;
+    }
+    state_encPBMachine();
+
     // iterate the rows
     for (int rowIndex=0; rowIndex < rowCount; rowIndex++) {
         // row: set to output to low
@@ -298,6 +372,37 @@ void read_keys() {
         pinMode(curRow, INPUT);
     }
 }
+void state_encPBMachine() {
+  stateChanged_encPB = false;
+  switch (state_encPB) {
+    case IDLE:
+      if (button_encPB == 0) {
+        state_encPB = PRESSED;
+        stateChanged_encPB = true;
+        encPB_holdTimer = millis();
+      }
+    break;
+    case PRESSED:
+      if ((millis()-encPB_holdTimer)>holdTime) {
+        state_encPB = HOLD;
+        stateChanged_encPB = true;
+      } else if (button_encPB == 1) {
+        state_encPB = RELEASED;
+        stateChanged_encPB = true;
+      }
+    break;
+    case HOLD:
+      if (button_encPB == 1) {
+        state_encPB = RELEASED;
+        stateChanged_encPB = true;
+      }
+    break;
+    case RELEASED:
+      state_encPB = IDLE;
+      stateChanged_encPB = true;
+    break;
+  }
+}
 void kstateMachine(int row, int col){
   stateChanged[row][col] = false;
   switch (kstate[row][col]) {
@@ -330,8 +435,34 @@ void kstateMachine(int row, int col){
   }
 }
 
-void print_keys() {
-  //for single key presses
+void send_keys() {
+  //for single enc key
+  if(stateChanged_encPB == true) {
+    switch (state_encPB) {
+      case IDLE:
+        Serial.print("encPB");
+        Serial.println(" IDLE");
+      break;
+
+      case PRESSED:
+        Serial.print("encPB");
+        Serial.println(" PRESSED");
+        keyPress_func(99); //hardcode value for the encPB
+      break;
+
+      case HOLD:
+        Serial.print("encPB");
+        Serial.println(" HOLD");
+        keyHold_func(99); //hardcode value for the encPB
+      break;
+
+      case RELEASED:
+        Serial.print("encPB");
+        Serial.println(" RELEASED");
+      break;
+    }
+  }
+  //for single key presses in matrix
   for (int rowIndex=0; rowIndex < rowCount; rowIndex++) {
     for (int colIndex=0; colIndex < colCount; colIndex++) {
       if (stateChanged[rowIndex][colIndex] == true){
@@ -344,11 +475,13 @@ void print_keys() {
           case PRESSED:
             Serial.print(keymap[rowIndex][colIndex]);
             Serial.println(" PRESSED");
+            keyPress_func(keymap[rowIndex][colIndex]);
           break;
 
           case HOLD:
             Serial.print(keymap[rowIndex][colIndex]);
             Serial.println(" HOLD");
+            keyHold_func(keymap[rowIndex][colIndex]);
           break;
 
           case RELEASED:
@@ -365,6 +498,7 @@ void print_keys() {
     if (((kstate[0][0] && kstate[0][6] && kstate[2][0] && kstate[2][6]) == PRESSED) 
     && (multiPress == false)) {
       Serial.println("multi PRESS");
+      //is there any way to reset the serial? mimic a power cycle
       multiPress = true;
     }
     if (((kstate[0][0] == RELEASED) || (kstate[0][6] == RELEASED) ||
@@ -374,28 +508,225 @@ void print_keys() {
     }
   }
 }
+
+void keyPress_func(int key) {
+  if (layer == 1) { //for macropad
+    switch (key) {
+      case 0:
+        Keyboard.press(KEY_MEDIA_VOLUME_DEC);
+        Keyboard.release(KEY_MEDIA_VOLUME_DEC);
+      break;
+      case 1:
+        Keyboard.press(KEY_MEDIA_PREV_TRACK);
+        Keyboard.release(KEY_MEDIA_PREV_TRACK);        
+      break;
+      case 2:
+        Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT);
+        Keyboard.send_now();
+        Keyboard.press(KEY_P);
+        Keyboard.release(KEY_P);
+        Keyboard.set_modifier(0);
+        Keyboard.send_now();
+      break;
+      case 3:
+        //code
+      break;
+      case 4:
+        //code
+      break;
+      case 5:
+        //code
+      break;
+      case 6:
+        //code
+      break;
+      case 10:
+        Keyboard.press(KEY_MEDIA_MUTE);
+        Keyboard.release(KEY_MEDIA_MUTE);
+      break;
+      case 11:
+        Keyboard.press(KEY_MEDIA_PLAY_PAUSE);
+        Keyboard.release(KEY_MEDIA_PLAY_PAUSE);
+      break;
+      case 12:
+        //code
+      break;
+      case 13:
+        //code
+      break;
+      case 14:
+        //code
+      break;
+      case 15:
+        //code
+      break;
+      case 16:
+        //code
+      break;
+      case 20:
+        Keyboard.press(KEY_MEDIA_VOLUME_INC);
+        Keyboard.release(KEY_MEDIA_VOLUME_INC);
+      break;
+      case 21:
+        Keyboard.press(KEY_MEDIA_NEXT_TRACK);
+        Keyboard.release(KEY_MEDIA_NEXT_TRACK);
+      break;
+      case 22:
+        //code
+      break;
+      case 23:
+        //code
+      break;
+      case 24:
+        //code
+      break;
+      case 25:
+        //code
+      break;
+      case 26:
+        //code
+      break;
+      case 30:
+        //code
+      break;
+      case 31:
+        //code
+      break;
+      case 32:
+        //code
+      break;
+      case 33:
+        //code
+      break;
+      case 34:
+        //code
+      break;
+      case 35:
+        //code
+      break;
+      case 36:
+        //code
+      break;
+      case 99: //encPB case
+        //code
+      break;
+    }
+  } else if (layer == 2) { //for lightroom layer
+    usbMIDI.sendNoteOn(key, 99, midiChannel);
+    usbMIDI.sendNoteOff(key, 0, midiChannel);
+  }
+}
+
+void keyHold_func(int key) {
+  if (layer == 1) { //for macropad
+    switch (key) {
+      case 0:
+        //code
+      break;
+      case 1:
+        //code
+      break;
+      case 2:
+        //code
+      break;
+      case 3:
+        //code
+      break;
+      case 4:
+        //code
+      break;
+      case 5:
+        //code
+      break;
+      case 6:
+        //code
+      break;
+      case 10:
+        //code
+      break;
+      case 11:
+        //code
+      break;
+      case 12:
+        //code
+      break;
+      case 13:
+        //code
+      break;
+      case 14:
+        //code
+      break;
+      case 15:
+        //code
+      break;
+      case 16:
+        //code
+      break;
+      case 20:
+        //code
+      break;
+      case 21:
+        //code
+      break;
+      case 22:
+        //code
+      break;
+      case 23:
+        //code
+      break;
+      case 24:
+        //code
+      break;
+      case 25:
+        //code
+      break;
+      case 26:
+        //code
+      break;
+      case 30:
+        //code
+      break;
+      case 31:
+        //code
+      break;
+      case 32:
+        //code
+      break;
+      case 33:
+        //code
+      break;
+      case 34:
+        //code
+      break;
+      case 35:
+        //code
+      break;
+      case 36:
+        //code
+      break;
+      case 99: //encPB case
+        //code
+      break;
+    }
+  }  else if (layer == 2) { //for lightroom layer
+    int holdKey = key + 28; //to push to new set of keys, non overlapping single press key value
+    usbMIDI.sendNoteOn(holdKey, 99, midiChannel);
+    usbMIDI.sendNoteOff(holdKey, 0, midiChannel);
+  }
+}
 //Layer Functions*******************************************************************************************************************//
 void macropad() {
   read_enc();
   send_enc_CC();
   read_keys();
-  print_keys();
-  //keypad_routine(/*input the values to change here?*/);
+  send_keys();
+  
   //change LED
-  //change enc CC value?
-  //change keymapping
-  //change pot?
-  //keypad can use usbMIDI.sendNoteOn(note, velocity, channel) or usbMIDI.sendNoteOff(note, velocity, channel)
-  //usbMIDI.sendControlChange(control number, value, channel)
 }
 
 void lightroom() {
   read_enc();
   send_enc_CC();
-}
- 
-void keypad_routine() {
-  //if row and col at the same time, then that button pressed
-  //do i need to set either row or col to be ON as output, then other to detect if high or low as input?
-  //this function will be polled
+  read_keys();
+  send_keys();
 }
