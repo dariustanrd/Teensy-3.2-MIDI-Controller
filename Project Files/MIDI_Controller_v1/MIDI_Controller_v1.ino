@@ -682,7 +682,7 @@ void keyPress_func(int key) {
     usbMIDI.sendNoteOn(key, 99, midiChannel);
     usbMIDI.sendNoteOff(key, 0, midiChannel);
     switch (key) { //to reset enc values for MIDI2LR
-      case 4: //to coincide with MIDI2LR left and right keys resetting encoder values
+      case 3: //to coincide with MIDI2LR left and right keys resetting encoder values
         for (int i = 0; i < NUM_ENC; i++) {
           enc_CCVal[i] = 64;
         }
@@ -692,11 +692,26 @@ void keyPress_func(int key) {
           enc_CCVal[i] = 64;
         }
       break;
+      case 6: //to coincide with MIDI2LR profile 3 key resetting encoder values
+        for (int i = 0; i < NUM_ENC; i++) {
+          enc_CCVal[i] = 64;
+        }
+      break;
+      case 16: //to coincide with MIDI2LR left and right keys resetting encoder values
+        for (int i = 0; i < NUM_ENC; i++) {
+          enc_CCVal[i] = 64;
+        }
+      break;
+      case 26: //to coincide with MIDI2LR left and right keys resetting encoder values
+        for (int i = 0; i < NUM_ENC; i++) {
+          enc_CCVal[i] = 64;
+        }
+      break;
       case 30:
-        enc_CCVal[7] = 64;
+        enc_CCVal[6] = 64;
       break;
       case 31:
-        enc_CCVal[6] = 64;
+        enc_CCVal[7] = 64;
       break;
       case 32:
         enc_CCVal[5] = 64;
@@ -819,8 +834,8 @@ void keyHold_func(int key) {
 }
 //Layer Functions*******************************************************************************************************************//
 void macropad() {
-  read_enc();
-  send_enc_CC();
+//  read_enc();
+//  send_enc_CC();
   read_keys();
   send_keys();
   
