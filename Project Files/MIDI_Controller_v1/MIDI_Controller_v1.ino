@@ -93,7 +93,7 @@ WS2812Serial leds(NUM_LEDS, displayMemory, drawingMemory, LED1, WS2812_GRB);
 
 //Main Functions*******************************************************************************************************************//
 void setup() {
-  Serial.begin(9600);
+  // Serial.begin(9600);
   SetupPin();
   SetupCC();
   SetupKeys();
@@ -180,7 +180,7 @@ void layerSelect() {
     } else {
       layer = 1;
     }
-    Serial.println(layer);
+    // Serial.println(layer);
   } 
   prevUP = curUP;
   
@@ -190,7 +190,7 @@ void layerSelect() {
     } else {
       layer = MAX_LAYER;
     }
-    Serial.println(layer);
+    // Serial.println(layer);
   }
   prevDWN = curDWN;
 
@@ -199,14 +199,14 @@ void layerSelect() {
 //Volume (TRIMPOT) Function*******************************************************************************************************************//
 void volumeSelect() {
   int trimVal = analogRead(TRIMPOT);
-  float smoothing = 0.2;
+  float smoothing = 0.2; //lower more stable
   
   smoothVal = (smoothing*trimVal) + ((1-smoothing)*smoothVal);
   
   curTrim = map(smoothVal, 0, 1023, 0, 100);
   
   if (curTrim != prevTrim) {
-    Serial.println(curTrim);
+    // Serial.println(curTrim);
     if (curTrim <= 5 ) {
     // Serial.println("Mute");
       Keyboard.press(KEY_MEDIA_MUTE);
@@ -280,7 +280,7 @@ void reset_enc(){
   enc6.write(RESET);
   enc7.write(RESET);
   enc8.write(RESET);
-  Serial.print("ENC Reset\n");
+  // Serial.print("ENC Reset\n");
 }
 
 void read_enc() {
@@ -357,9 +357,9 @@ void send_enc_CC() {
   for (int i = 0; i < NUM_ENC; i++) {
     if (enc_updateCCflag[i]!=0) {
       usbMIDI.sendControlChange(enc_CC[i], enc_CCVal[i], midiChannel);
-      Serial.print("CC Change = ");
-      Serial.print(enc_CCVal[i]);
-      Serial.println();
+      // Serial.print("CC Change = ");
+      // Serial.print(enc_CCVal[i]);
+      // Serial.println();
     }
   }
 }
@@ -488,25 +488,25 @@ void send_keys() {
   if(stateChanged_encPB == true) {
     switch (state_encPB) {
       case IDLE:
-        Serial.print("encPB");
-        Serial.println(" IDLE");
+        // Serial.print("encPB");
+        // Serial.println(" IDLE");
       break;
 
       case PRESSED:
-        Serial.print("encPB");
-        Serial.println(" PRESSED");
+        // Serial.print("encPB");
+        // Serial.println(" PRESSED");
         keyPress_func(99); //hardcode value for the encPB
       break;
 
       case HOLD:
-        Serial.print("encPB");
-        Serial.println(" HOLD");
+        // Serial.print("encPB");
+        // Serial.println(" HOLD");
         keyHold_func(99); //hardcode value for the encPB
       break;
 
       case RELEASED:
-        Serial.print("encPB");
-        Serial.println(" RELEASED");
+        // Serial.print("encPB");
+        // Serial.println(" RELEASED");
       break;
     }
   }
@@ -516,25 +516,25 @@ void send_keys() {
       if (stateChanged[rowIndex][colIndex] == true){
         switch (kstate[rowIndex][colIndex]){
           case IDLE:
-            Serial.print(keymap[rowIndex][colIndex]);
-            Serial.println(" IDLE");
+            // Serial.print(keymap[rowIndex][colIndex]);
+            // Serial.println(" IDLE");
           break;
 
           case PRESSED:
-            Serial.print(keymap[rowIndex][colIndex]);
-            Serial.println(" PRESSED");
+            // Serial.print(keymap[rowIndex][colIndex]);
+            // Serial.println(" PRESSED");
             keyPress_func(keymap[rowIndex][colIndex]);
           break;
 
           case HOLD:
-            Serial.print(keymap[rowIndex][colIndex]);
-            Serial.println(" HOLD");
+            // Serial.print(keymap[rowIndex][colIndex]);
+            // Serial.println(" HOLD");
             keyHold_func(keymap[rowIndex][colIndex]);
           break;
 
           case RELEASED:
-            Serial.print(keymap[rowIndex][colIndex]);
-            Serial.println(" RELEASED");
+            // Serial.print(keymap[rowIndex][colIndex]);
+            // Serial.println(" RELEASED");
           break;
         }
       }
@@ -544,22 +544,22 @@ void send_keys() {
   if ((stateChanged[0][0] || stateChanged[0][6] || stateChanged[2][0] || stateChanged[2][6]) == true) {
     if (((kstate[0][0] && kstate[0][6] && kstate[2][0] && kstate[2][6]) == PRESSED) 
     && (multiPress == false)) {
-      Serial.println("multi PRESS");
+      // Serial.println("multi PRESS");
       //is there any way to reset the serial? mimic a power cycle?
-      // Keyboard.press(KEY_SYSTEM_SLEEP);
-      // Keyboard.release(KEY_SYSTEM_SLEEP);
+      Keyboard.press(KEY_SYSTEM_SLEEP);
+      Keyboard.release(KEY_SYSTEM_SLEEP);
       multiPress = true;
     }
     if (((kstate[0][0] == RELEASED) || (kstate[0][6] == RELEASED) ||
     (kstate[2][0] == RELEASED) || (kstate[2][6] == RELEASED)) && (multiPress == true)) {
-      Serial.println("multi RELEASE");
+      // Serial.println("multi RELEASE");
       multiPress = false;
     }
   }
 }
 
 void keyPress_func(int key) {
-  if (layer == 1) { //for macropad
+  if (layer == 1) { //for macropad see https://www.pjrc.com/teensy/td_keyboard.html
     switch (key) {
       case 0:
         Keyboard.press(KEY_MEDIA_VOLUME_DEC);
@@ -569,7 +569,7 @@ void keyPress_func(int key) {
         Keyboard.press(KEY_MEDIA_PREV_TRACK);
         Keyboard.release(KEY_MEDIA_PREV_TRACK);        
       break;
-      case 2:
+      case 2: //open command palette
         Keyboard.set_modifier(MODIFIERKEY_CTRL | MODIFIERKEY_SHIFT);
         Keyboard.send_now();
         Keyboard.press(KEY_P);
@@ -581,13 +581,31 @@ void keyPress_func(int key) {
         //code
       break;
       case 4:
-        //code
+        //winkey ctrl left see virtual desktop right
+        Keyboard.set_modifier(MODIFIERKEY_GUI | MODIFIERKEY_CTRL);
+        Keyboard.send_now();
+        Keyboard.press(KEY_LEFT);
+        Keyboard.release(KEY_LEFT);
+        Keyboard.set_modifier(0);
+        Keyboard.send_now();
       break;
       case 5:
-        //code
+        //winkey tab see task view
+        Keyboard.set_modifier(MODIFIERKEY_GUI);
+        Keyboard.send_now();
+        Keyboard.press(KEY_TAB);
+        Keyboard.release(KEY_TAB);
+        Keyboard.set_modifier(0);
+        Keyboard.send_now();
       break;
       case 6:
-        //code
+        //winkey ctrl right see virtual desktop right
+        Keyboard.set_modifier(MODIFIERKEY_GUI | MODIFIERKEY_CTRL);
+        Keyboard.send_now();
+        Keyboard.press(KEY_RIGHT);
+        Keyboard.release(KEY_RIGHT);
+        Keyboard.set_modifier(0);
+        Keyboard.send_now();
       break;
       case 10:
         Keyboard.press(KEY_MEDIA_MUTE);
@@ -664,6 +682,16 @@ void keyPress_func(int key) {
     usbMIDI.sendNoteOn(key, 99, midiChannel);
     usbMIDI.sendNoteOff(key, 0, midiChannel);
     switch (key) { //to reset enc values for MIDI2LR
+      case 4: //to coincide with MIDI2LR left and right keys resetting encoder values
+        for (int i = 0; i < NUM_ENC; i++) {
+          enc_CCVal[i] = 64;
+        }
+      break;
+      case 5: //to coincide with MIDI2LR left and right keys resetting encoder values
+        for (int i = 0; i < NUM_ENC; i++) {
+          enc_CCVal[i] = 64;
+        }
+      break;
       case 30:
         enc_CCVal[7] = 64;
       break;
