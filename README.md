@@ -1,6 +1,8 @@
 # Teensy 3.2 MIDI Controller / Macropad
 A custom MIDI Controller / Macropad based on the [Teensy 3.2 microcontroller](https://www.pjrc.com/store/teensy32.html) for [MIDI2LR](https://github.com/rsjaffe/MIDI2LR/) integration and multi-keystroke macro execution.
 
+Images of the final product can be seen either in this [gallery](ADDLINKHERE) or at the end of this README.
+
 ### Inspiration for this project
 
 Firstly, I was facing issues with editing a large number of images in Adobe Lightroom as it often takes a long time and it was not very intuitive to edit with my laptop's touchpad. Therefore, I stumbled upon MIDI2LR which uses MIDI Controllers normally used for music production to act as a physical device to change values in Lightroom.
@@ -32,4 +34,14 @@ Therefore, this controller serves 2 main purposes:
 
    Thus, when I rotated the encoders, which are mapped to specific CC numbers, the CC value would increment or decrement correspondingly on the MIDI channel that is defined by the current Layer that the device is in (controlled by the toggle switch).
 
+   For the 4 x 7 keyswitch matrix, I setup a state machine in order to properly set the states of each individual switch be it IDLE, PRESSED, HOLD or RELEASED. Then, if the layer is currently on the lightroom layer, whether the switch is pressed or held, different MIDI NOTE messages will be sent. Otherwise, a keyboard macro will be sent instead. To send the keyboard press, the inbuilt [Teensy keyboard libary](https://www.pjrc.com/teensy/td_keyboard.html) is used. However, as there is no USB type for "Serial + MIDI + Keyboard", I edited the "Serial + MIDI" USB type in usb_desc.h to include keyboard functionality as well (inspiration from [here](https://forum.pjrc.com/threads/23942-Using-Serial-and-MIDI-USB-types-at-the-same-time).)
+
    Lastly, to be able to physically ascertain what layer the device is currently in, I changed the colour of the WS2812B LED strip using the [Teensy WS2812Serial.h library](https://github.com/PaulStoffregen/WS2812Serial) and added a cycling rainbow pattern for fun in the highest layer (which actually causes the teensy to be unable to perform other tasks, hence that layer is technically unusable but its just there for the sake of it).
+
+### Images
+Image ?:
+![Image of ?](http://)
+
+Image ?:
+![Image of ?](http://)
+

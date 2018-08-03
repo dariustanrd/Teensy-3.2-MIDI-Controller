@@ -1,3 +1,5 @@
+//Code for Teensy 3.2 MIDI Controller / Macropad
+
 #include <Encoder.h>
 #include <WS2812Serial.h>
 
@@ -541,6 +543,7 @@ void send_keys() {
     }
   }
   //for multi of 4 corner keys
+  //this code is kinda spaghetti-ish as operands such as || and && are not supposed to be used in this manner for an enum. but it works here.
   if ((stateChanged[0][0] || stateChanged[0][6] || stateChanged[2][0] || stateChanged[2][6]) == true) {
     if (((kstate[0][0] && kstate[0][6] && kstate[2][0] && kstate[2][6]) == PRESSED) 
     && (multiPress == false)) {
