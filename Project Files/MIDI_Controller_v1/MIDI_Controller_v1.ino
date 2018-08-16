@@ -23,8 +23,8 @@
 #define WHITE  0xFFFFFF
 
 //Declarations for Encoder Functionality*******************************************************************************************************************//
-long enc_pos_new[NUM_ENC]; //used to be -999
-long enc_pos_old[NUM_ENC]; //used to be -999
+long enc_pos_new[NUM_ENC];
+long enc_pos_old[NUM_ENC];
 int enc_updateCCflag[NUM_ENC];
 
 Encoder enc1(0, 1);
@@ -306,7 +306,7 @@ int check_pos(long encPos_new, long encPos_old) {
   if (encPos_new == encPos_old) {
     return 0;
   }
-  if(encPos_new %4 != 0) { //MIDIEncoder.cpp uses 4, more sensitive than if use 5/detent --> turn more to get same change
+  if(encPos_new %4 != 0) { 
     return 0;
   }
   if (encPos_new > encPos_old) {

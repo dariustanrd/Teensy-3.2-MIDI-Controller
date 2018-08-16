@@ -1,9 +1,9 @@
 # Teensy 3.2 MIDI Controller / Macropad
 A custom MIDI Controller / Macropad based on the [Teensy 3.2 microcontroller](https://www.pjrc.com/store/teensy32.html) for [MIDI2LR](https://github.com/rsjaffe/MIDI2LR/) integration and multi-keystroke macro execution.
 
-Images of the final product can be seen either in this [gallery](ADDLINKHERE) or at the end of this README.
+Images of the final product can be seen either in this [gallery](https://imgur.com/a/6ZGOYGf) or at the end of this README.
 
-### Inspiration for this project
+## Inspiration for this project
 
 Firstly, I was facing issues with editing a large number of images in Adobe Lightroom as it often takes a long time and it was not very intuitive to edit with my laptop's touchpad. Therefore, I stumbled upon MIDI2LR which uses MIDI Controllers normally used for music production to act as a physical device to change values in Lightroom.
 
@@ -15,7 +15,7 @@ Therefore, this controller serves 2 main purposes:
   
 2. To send USB keyboard presses in order to chain multiple keypresses into a single macro key.
 
-### Build Process
+## Build Process
 1. Mechanical & Electrical Fabrication
    
     I first purchased [this aluminium enclosure](https://item.taobao.com/item.htm?id=542717489532&_u=t2dmg8j26111) from Taobao, an online Chinese retailer, and milled out the holes for the encoders and the key switches to pass through. I designed a grid for the key switches in SolidWorks and fabricated it with a water jet machine out of 2mm Aluminium (which should have been 1.5mm Alu in hindsight). I then sand blasted the aluminium components and spray painted them black for aesthetic purposes.
@@ -38,10 +38,34 @@ Therefore, this controller serves 2 main purposes:
 
    Lastly, to be able to physically ascertain what layer the device is currently in, I changed the colour of the WS2812B LED strip using the [Teensy WS2812Serial.h library](https://github.com/PaulStoffregen/WS2812Serial) and added a cycling rainbow pattern for fun in the highest layer (which actually causes the teensy to be unable to perform other tasks, hence that layer is technically unusable but its just there for the sake of it).
 
-### Images
-Image ?:
-![Image of ?](http://)
+## Images
+Completed Device:
+![Top Profile](https://i.imgur.com/Psa645J.jpg)
 
-Image ?:
-![Image of ?](http://)
+Side Profile of Device:
+![Side Profile](https://i.imgur.com/vnLoN1B.jpg)
 
+Milled Aluminium Enclosure:
+![Milled Alu Enclosure](https://i.imgur.com/TC5yx83.jpg)
+
+Pre-assembly Layout:
+![Pre-assembly Layout](https://i.imgur.com/biHaPxL.jpg)
+
+Internal Wiring:
+![Internal Wiring](https://i.imgur.com/1Cpjv54.jpg)
+
+Internal Wiring Closeup:
+![Internal Wiring Closeup](https://i.imgur.com/a4k7R1G.jpg)
+
+Front Profile:
+![Front Profile](https://i.imgur.com/oIkylop.jpg)
+
+Top Profile:
+![Top Profile](https://i.imgur.com/EcbCQ41.jpg)
+
+## GIFs
+Top Profile GIF:
+![Top Profile GIF](https://thumbs.gfycat.com/SomeMelodicFlies-size_restricted.gif)
+
+Side Profile GIF:
+![Side Profile GIF](https://thumbs.gfycat.com/SolidMagnificentAcornbarnacle-size_restricted.gif)
