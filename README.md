@@ -65,7 +65,9 @@ Top Profile:
 
 ## GIFs
 Top Profile GIF:
+
 ![Top Profile GIF](https://thumbs.gfycat.com/SomeMelodicFlies-size_restricted.gif)
 
 Side Profile GIF:
+
 ![Side Profile GIF](https://thumbs.gfycat.com/SolidMagnificentAcornbarnacle-size_restricted.gif)
